@@ -29,23 +29,30 @@ Data Format: D0	D1	D2	D3	D4	D5	D6	D7
 Note:-Change the Pin No as per requirements 
 */
 const int BRAKE                 = 35;
-// const int FORWARD_MOTOR         = 35;
-// const int REVERSE_MOTOR         = 35;
-// const int THROTTLE              = 35;
+const int FORWARD_MOTOR         = 27;
+const int REVERSE_MOTOR         = 22;
+const int THROTTLE              = 14;   // Analog Pin
 const int RIGHT_INDICATOR       = 32;
 const int LEFT_INDICATOR        = 33;
 const int HAZARD                = 25;
 const int IGNITION              = 26;
 const int LATCH                 = 5;
 const int HEAD_LAMP             = 18;
-// const int USER_BTN              = 35;
+// const int MOTOR              = 35;
+
+/*
+Fixed byte for forward and reverse bits
+*/
+const byte FORWARD_BITS[] = {0xFF, 0xF1, 0xFF, 0xFF};
+const byte REVERSE_BITS[] = {0xFF, 0xFF, 0xF1, 0xFF};
+
 
 byte sendData[][8] = {
     {0xF4,	0xFF,	0xFF,	0x4F,	0xFF,	0xFF,	0xF1,	0xFF}, // 0. Data for ID Brake 
-    {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17},  // 1. Data for ID Forward Motor             - to be added
-    {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27},  // 2. Data for ID Reverse Motor             - to be added
+    {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17},  // 1. Data for ID Forward Motor             - to be added  this row is updated by software
+    {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27},  // 2. Data for ID Reverse Motor             - to be added  this row is updated by software
     {0x03, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},  // 3. Data for ID Throttle                  - to be added
-    {0xFF,	0xF4,	0xFF,	0xFF, 0xFF,	0xFF,	0xFF,	0xFF}, // 4. Data for ID Right Indicator
+    {0xFF,	0xF4,	0xFF,	0xFF, 0xFF,	0xFF,	0xF2,	0xFF}, // 4. Data for ID Right Indicator
     {0xFF,	0xFF,	0xF4,	0xFF,	0xFF,	0x2F,	0xFF,	0xFF}, // 5. Data for ID Left Indicator
     {0xF2,	0xFF,	0xFF,	0xFF,	0xFF,	0xFF,	0xFF,	0x8F}, // 6. Data for ID Hazard
     {0xFF,	0xFF,	0xFF,	0xF4,	0xFF,	0xFF,	0xF4,	0xFF}, // 7. Data for ID Ignition
@@ -55,7 +62,7 @@ byte sendData[][8] = {
  
  
 struct canMessage {
-  char msgid;
+  int msgid;
   char msgname[30];
 };
 
@@ -79,7 +86,7 @@ const int sendDataSize = (sizeof(sendData[0])/sizeof(sendData[0][0]));
 void sendMessage(int x)
 {
 
-  char canID = messages[x].msgid;
+  int canID = messages[x].msgid;
   byte* canData =  sendData[x];
   sendArray(canData, sendDataSize, canID); // Sending array1 with ID 0x123
   Serial.println("CAN ID: ");
@@ -92,6 +99,9 @@ void sendMessage(int x)
     Serial.print(" ");
   }
   Serial.println();
+
+  //Serial communication
+  // Serial.print(canID);
 }
  
 void setup() {
@@ -127,15 +137,54 @@ void setup() {
 void loop() {
   // Initializing Button
   int BRAKE_BTN                 = digitalRead(BRAKE);
-  // int FORWARD_MOTOR_BTN         = digitalRead(FORWARD_MOTOR);
-  // int REVERSE_MOTOR_BTN         = digitalRead(REVERSE_MOTOR);
-  // int THROTTLE                  = digitalRead(THROTTLE);
+  int FORWARD_MOTOR_BTN         = digitalRead(FORWARD_MOTOR);
+  int REVERSE_MOTOR_BTN         = digitalRead(REVERSE_MOTOR);
+  // int THROTTLE                  = digitalRead(THROTTLE);            // donot remove this comment
   int RIGHT_INDICATOR_BTN       = digitalRead(RIGHT_INDICATOR );
   int LEFT_INDICATOR_BTN        = digitalRead(LEFT_INDICATOR );
   int HAZARD_BTN                = digitalRead(HAZARD);
   int IGNITION_BTN              = digitalRead(IGNITION);
   int LATCH_BTN                 = digitalRead(LATCH);
   int HEAD_LAMP_BTN             = digitalRead(HEAD_LAMP);
+
+  int throttleValue              = analogRead(THROTTLE);
+
+  
+  // Logic for Forward Motor + Throttle
+  if (FORWARD_MOTOR_BTN == HIGH) {
+    byte forwardMotorThrottle[8]; // Array to hold forward motor and throttle data
+
+    // Set the fixed bits for forward position
+    memcpy(forwardMotorThrottle, FORWARD_BITS, sizeof(FORWARD_BITS));
+
+    // Set the throttle value into the array
+    forwardMotorThrottle[4] = throttleValue & 0xFF; // Lower 8 bits of throttle value
+    forwardMotorThrottle[5] = (throttleValue >> 8) & 0xFF; // Upper 8 bits of throttle value
+
+    memcpy(sendData[1], forwardMotorThrottle, sizeof(forwardMotorThrottle));
+    sendMessage(1);
+    // sendArray(byte *arr, int size, int messageId)
+    // int canID = messages[1].msgid;
+    // sendArray(forwardMotorThrottle, sizeof(forwardMotorThrottle), canID);
+    Serial.println("CAN MESSAGE FOR FORWARD MOTOR + THROTTLE SENT SUCCESSFULLY");
+  }
+
+
+  // Logic for Reverse Motor + Throttle
+  if (REVERSE_MOTOR_BTN == HIGH) {
+    byte reverseMotorThrottle[8]; // Array to hold reverse motor and throttle data
+
+    // Set the fixed bits for reverse position
+    memcpy(reverseMotorThrottle, REVERSE_BITS, sizeof(REVERSE_BITS));
+
+    // Set the throttle value into the array
+    reverseMotorThrottle[4] = throttleValue & 0xFF; // Lower 8 bits of throttle value
+    reverseMotorThrottle[5] = (throttleValue >> 8) & 0xFF; // Upper 8 bits of throttle value
+
+    memcpy(sendData[2], reverseMotorThrottle, sizeof(reverseMotorThrottle));
+    sendMessage(2);
+    Serial.println("CAN MESSAGE FOR REVERSE MOTOR + THROTTLE SENT SUCCESSFULLY");
+  }
 
 
   // Logic for Brake
@@ -221,7 +270,7 @@ void loop() {
 
 }
  
-void sendArray(byte *arr, int size, char messageId) {
+void sendArray(byte *arr, int size, int messageId) {
   Serial.print("Sending array... ");
  
   CAN.beginPacket(messageId); // Set the ID
