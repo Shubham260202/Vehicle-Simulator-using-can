@@ -8,6 +8,24 @@
  
 #define MAX_PACKET_SIZE 64  // Defines the maximum size of the receiving packet
 
+
+// struct canData1 {
+//   int CANmsgid;
+//   byte CANdataON[8];
+//   byte CANdataOFF[8];
+//   char CANmsgname[30];
+// }; 
+
+// struct canData1 Noncriticaldata[] = {
+//   {0x76, "FFF4FFFFFFFFFFFF","FFFFFFFFFFFFF2FF","Right Indicator"},
+//   {0x78, "FFFFF4FFFFFFFFFF","FFFFFFFFFF2FFFFF","Left Indicator"},
+//   {0x7A, "FFFFFFFFFFFFFF8F","F2FFFFFFFFFFFFFF","Hazard"},
+//   {0x7C, "FFFFFFF4FFFFFFFF","FFFFFFFFFFFFF4FF","Ignition"},
+//   {0x7E, "FFFFFFFF2FFFFFFF","1FFFFFFFFFFFFFFF","Latch"},
+//   {0x80, "FFFFFFFFFF1FFFFF","FFFFFF4FFFFFFFFF","Head Lamp"}
+// };
+
+
 //==================================================================================//
  
 void setup() {
@@ -36,8 +54,8 @@ void loop() {
   // canSender();
   receiveCAN();
 }
- 
- 
+
+
 //==================================================================================//
 void receiveCAN() {
   if (CAN.parsePacket()) {
@@ -45,7 +63,7 @@ void receiveCAN() {
     int packetSize = CAN.packetDlc(); // Fetch DLC (Data Length Code)
 
     Serial.print("Received packet with ID ");
-    Serial.print(packetId);
+    Serial.print(packetId,HEX);
     Serial.print(", size: ");
     Serial.print(packetSize);
     Serial.println(" bytes");
@@ -64,6 +82,7 @@ void receiveCAN() {
     }
     Serial.println();
 
+    
     Serial.println("----------------------------------------------");
     Serial.println("Received Data: ");
     for (int i = 0; i < packetSize; i++) {
@@ -72,6 +91,8 @@ void receiveCAN() {
       // Serial.print(" ");
     }
     Serial.println();
+
+
 
     Serial.println("----------------------------------------------");
       // Variables to store the extracted bits D0 to D7
