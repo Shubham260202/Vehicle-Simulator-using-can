@@ -16,3 +16,12 @@ Received packet with ID 118, size: 8 bytes
 Data: FF F4 FF FF FF FF FF FF 
 Received packet with ID 110, size: 8 bytes
 Data: F4 FF FF 4F FF FF F1 FF 
+
+Sending array... done
+CAN ID: 
+112
+CAN DATA LENGTH: 
+8
+CAN DATA: 
+FF F1 FF FF 47 1 FC 3F 
+CAN MESSAGE FOR FORWARD MOTOR + THROTTLE SENT SUCCESSFULLY
